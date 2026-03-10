@@ -1,0 +1,12 @@
+# Elasticsearch Curator и зависимости без CVE
+# Версии зафиксированы согласно отчёту Trivy / req-1159159
+elasticsearch-curator==8.0.16
+elasticsearch[async]>=8.0.0,<9.0.0
+click>=8.1.0
+pyyaml>=6.0.1
+voluptuous>=0.14.0
+certifi>=2024.2.2
+urllib3>=2.6.3
+setuptools>=78.1.1
+wheel>=0.46.2
+pip>=26.0
