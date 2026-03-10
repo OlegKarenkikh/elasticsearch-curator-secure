@@ -1,8 +1,11 @@
 {
-  "name": "Elasticsearch Curator — Secure Build",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "name": "Elasticsearch Curator - Secure Build",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
@@ -13,7 +16,11 @@
         "aquasecurityofficial.trivy-vulnerability-scanner",
         "github.vscode-github-actions",
         "redhat.vscode-yaml"
-      ]
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "docker.defaultRegistryPath": "cgr.dev/chainguard"
+      }
     }
   },
   "forwardPorts": [],
