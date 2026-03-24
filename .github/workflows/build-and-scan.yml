@@ -41,25 +41,41 @@ jobs:
           cache-to: type=gha,mode=max
 
       # ---------------------------------------------------------
-      # Smoke-test: проверяем что контейнер запускается,
-      # бинарь curator вызывается и выводит help-текст.
-      # Chainguard-образ не имеет shell, поэтому curator вызывается
-      # через exec-форму (без sh -c). Ожидаем код выхода 0 — curator
-      # возвращает 0 при --help.
+      # Smoke-test: проверяем что контейнер запускается и curator CLI доступен.
+      # ENTRYPOINT вызывает curator.cli:cli напрямую (bez -m curator).
+      # Click возвращает код 0 при --help и пишет вывод в stdout.
+      # Тест завалится если:
+      #   1. docker run вернул ненулевой exit code
+      #   2. В выводе есть признаки ошибки: Error/Traceback/No module
+      #   3. В выводе нет ожидаемого CLI help (Usage: / Options:)
       # ---------------------------------------------------------
-      - name: Smoke test — curator binary is callable
+      - name: Smoke test — curator CLI is callable
         run: |
           echo "=== Running smoke test ==="
+          set +e
           OUTPUT=$(docker run --rm \
             ${{ env.DOCKERHUB_IMAGE }}:${{ github.sha }} \
-            --help 2>&1) || true
-          echo "--- curator output ---"
+            --help 2>&1)
+          EXIT_CODE=$?
+          set -e
+          echo "--- curator output (exit code: $EXIT_CODE) ---"
           echo "$OUTPUT"
           echo "--- end output ---"
-          if echo "$OUTPUT" | grep -qi "curator"; then
-            echo "✅ Smoke test PASSED: curator binary is reachable and responds"
+
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "❌ Smoke test FAILED: container exited with code $EXIT_CODE"
+            exit 1
+          fi
+
+          if echo "$OUTPUT" | grep -qiE "(Traceback|No module named|ImportError|ModuleNotFoundError)"; then
+            echo "❌ Smoke test FAILED: Python error detected in output"
+            exit 1
+          fi
+
+          if echo "$OUTPUT" | grep -qiE "(Usage:|Options:)"; then
+            echo "✅ Smoke test PASSED: curator CLI is reachable and responds correctly"
           else
-            echo "❌ Smoke test FAILED: expected 'curator' in output"
+            echo "❌ Smoke test FAILED: expected CLI help output (Usage:/Options:) not found"
             exit 1
           fi
 
