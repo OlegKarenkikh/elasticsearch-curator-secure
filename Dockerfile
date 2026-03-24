@@ -33,8 +33,8 @@ COPY --from=builder /app/packages /app/packages
 ENV PYTHONPATH=/app/packages
 
 # Chainguard runtime не имеет shell (/bin/sh отсутствует).
-# Используем exec-форму ENTRYPOINT — вызов идёт напрямую через execve,
-# без участия shell-интерпретатора. Python-бинарь в Chainguard расположен
-# по пути /usr/bin/python, а не /usr/local/bin/python.
-ENTRYPOINT ["/usr/bin/python", "-m", "curator"]
+# pip install --target НЕ создаёт bin-скрипты (console_scripts),
+# поэтому вызываем cli-функцию напрямую через -c.
+# curator.cli:cli — официальная точка входа пакета (console_scripts в pyproject.toml).
+ENTRYPOINT ["/usr/bin/python", "-c", "from curator.cli import cli; cli()"]
 CMD ["--help"]
