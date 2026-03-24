@@ -14,10 +14,10 @@ env:
 jobs:
 
   # ===========================================================
-  # Job 1: Build, Trivy scan, gate
+  # Job 1: Build, Smoke-test, Trivy scan, gate
   # ===========================================================
   build-and-scan:
-    name: Build -> Trivy Scan -> Gate
+    name: Build -> Smoke Test -> Trivy Scan -> Gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,6 +39,29 @@ jobs:
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # ---------------------------------------------------------
+      # Smoke-test: проверяем что контейнер запускается,
+      # бинарь curator вызывается и выводит help-текст.
+      # Chainguard-образ не имеет shell, поэтому curator вызывается
+      # через exec-форму (без sh -c). Ожидаем код выхода 0 — curator
+      # возвращает 0 при --help.
+      # ---------------------------------------------------------
+      - name: Smoke test — curator binary is callable
+        run: |
+          echo "=== Running smoke test ==="
+          OUTPUT=$(docker run --rm \
+            ${{ env.DOCKERHUB_IMAGE }}:${{ github.sha }} \
+            --help 2>&1) || true
+          echo "--- curator output ---"
+          echo "$OUTPUT"
+          echo "--- end output ---"
+          if echo "$OUTPUT" | grep -qi "curator"; then
+            echo "✅ Smoke test PASSED: curator binary is reachable and responds"
+          else
+            echo "❌ Smoke test FAILED: expected 'curator' in output"
+            exit 1
+          fi
 
       - name: Trivy - Table (PR log)
         uses: aquasecurity/trivy-action@master

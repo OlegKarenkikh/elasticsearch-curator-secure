@@ -32,5 +32,9 @@ COPY --from=builder /app/packages /app/packages
 # Указываем Python путь к пакетам
 ENV PYTHONPATH=/app/packages
 
-ENTRYPOINT ["python", "-m", "curator"]
+# Chainguard runtime не имеет shell (/bin/sh отсутствует).
+# Используем exec-форму ENTRYPOINT — вызов идёт напрямую через execve,
+# без участия shell-интерпретатора. Python-бинарь в Chainguard расположен
+# по пути /usr/bin/python, а не /usr/local/bin/python.
+ENTRYPOINT ["/usr/bin/python", "-m", "curator"]
 CMD ["--help"]
